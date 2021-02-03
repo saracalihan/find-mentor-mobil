@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useState, useEffect, useRef} from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   SafeAreaView,
   Text,
@@ -14,9 +14,9 @@ import {
   Linking,
 } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
-import {Avatar} from 'react-native-elements';
-import {BackButton} from '../components/SVGR-Components';
-import {Divider} from 'react-native-elements';
+import { Avatar } from 'react-native-elements';
+import { BackButton } from '../components/SVGR-Components';
+import { Divider } from 'react-native-elements';
 import WebView from 'react-native-webview';
 import axios from 'axios';
 import marked from 'marked';
@@ -28,14 +28,16 @@ import {
   ShareTwitter,
   Question,
 } from '../components/SVGR-Components';
+import { black } from 'react-native-paper/lib/typescript/styles/colors';
 
-const MentorMenteesDetail = ({route, navigation, props}) => {
+const MentorMenteesDetail = ({ route, navigation, props }) => {
   const [person, setPerson] = useState({});
   const [contributions, setContributions] = useState([{}]);
   const [isContributer, setIsContributer] = useState(true);
   const [twitterHtml, setTwitterHtml] = useState(''); // twitter timeline html
   const [loading, setLoading] = useState(true);
   const [readMe, setReadMe] = useState('');
+  const [mentorships, setMentorships] = useState([{}])
 
   useEffect(() => {
     getPersonInfo(route.params.slug);
@@ -57,6 +59,7 @@ const MentorMenteesDetail = ({route, navigation, props}) => {
           ? setIsContributer(false)
           : setContributions(p.contributions);
         let githubUsername = p.github.replace('https://github.com/', '');
+        setMentorships(p.mentorships);
         axios
           .get(
             `https://raw.githubusercontent.com/${githubUsername}/${githubUsername}/master/README.md`,
@@ -73,7 +76,6 @@ const MentorMenteesDetail = ({route, navigation, props}) => {
     .then((resp) => {
       setTwitterHtml(resp.data.html);
     });
-
   const getColor = () => {
     const mentorColor = '#17aa90';
     const menteeColor = '#2f6998';
@@ -82,19 +84,19 @@ const MentorMenteesDetail = ({route, navigation, props}) => {
     return person.mentor === 'Mentee'
       ? menteeColor
       : person.mentor === 'Both' || person.mentor === 'İkiside'
-      ? bothColor
-      : mentorColor;
+        ? bothColor
+        : mentorColor;
   };
 
-  const getGithubReadme= ( readMe ) => {
+  const GithubReadMe = (props) => {
     return (
       <WebView
-      style={{
-        width: Dimensions.get('window').width / 0.5,
-        minHeight: Dimensions.get('window').height / 2.5,
-      }}
-      source={{
-        html: `
+        style={{
+          width: Dimensions.get('window').width / 0.5,
+          minHeight: Dimensions.get('window').height / 2.5,
+        }}
+        source={{
+          html: `
           <div 
             style="
               width: ${Dimensions.get('window').width / 0.93}px;
@@ -102,16 +104,16 @@ const MentorMenteesDetail = ({route, navigation, props}) => {
               text-align: justify;
             "
           >
-            ${readMe}
+            ${props.data}
           </div>`,
-      }}
-    />
+        }}
+      />
     )
   }
 
   const Contributions = () => {
     const ContributerImages = (props) => {
-      const renderItem = ({item}) => (
+      const renderItem = ({ item }) => (
         <TouchableOpacity
           onPress={() =>
             item.fmn_url == ''
@@ -135,20 +137,20 @@ const MentorMenteesDetail = ({route, navigation, props}) => {
       );
 
       return (
-        <View style={{alignItems: 'center'}}>
+        <View style={{ alignItems: 'center' }}>
           <FlatList
             data={props.data}
             renderItem={renderItem}
             keyExtractor={(item) => item.username}
             numColumns={7}
-            style={{alignItems: 'center'}}
+            style={{ alignItems: 'center' }}
           />
         </View>
       );
     };
 
-    const renderItem = ({item}) => (
-      <View style={{marginBottom: 10}}>
+    const renderItem = ({ item }) => (
+      <View style={{ marginBottom: 10 }}>
         <Text
           style={[
             {
@@ -161,7 +163,7 @@ const MentorMenteesDetail = ({route, navigation, props}) => {
           ]}>
           {item.slug}
         </Text>
-        <Text style={[{textAlign: 'justify'}, styles.TextColor]}>
+        <Text style={[{ textAlign: 'justify' }, styles.TextColor]}>
           {item.goal}
         </Text>
         <ContributerImages data={item.contributors} />
@@ -179,6 +181,25 @@ const MentorMenteesDetail = ({route, navigation, props}) => {
     );
   };
 
+  const ActiveMentorships = () => {
+    const renderItem = ({ item }) => {
+      return (
+        <TouchableOpacity>
+          <Text>
+            {item.slug}
+          </Text>
+        </TouchableOpacity>
+      )
+    }
+    return (
+      <FlatList
+        data={mentorships}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.slug}
+      />
+    )
+  }
+
   return (
     <SafeAreaView style={styles.mainView}>
       <TouchableOpacity
@@ -187,243 +208,246 @@ const MentorMenteesDetail = ({route, navigation, props}) => {
         <BackButton width={25} height={25} fill={getColor()} />
       </TouchableOpacity>
       {loading ? (
-        <View style={{marginVertical: 10}}>
+        <View style={{ marginVertical: 10 }}>
           <ActivityIndicator size="large" color="#32475b" />
         </View>
       ) : (
-        <ScrollView style={{flex: 1}} ref={scrollRef}>
-          <View style={{alignItems: 'center'}}>
-            <View
-              style={[
-                styles.box,
-                styles.infoView,
-                {borderTopColor: getColor()},
-              ]}>
-              <View style={[styles.mmView, {borderColor: getColor()}]}>
-                <Text
-                  style={{color: getColor(), fontWeight: 'bold', fontSize: 23}}>
-                  {person.mentor === 'Both' || person.mentor === 'İkiside'
-                    ? 'Mentor & Mentee'
-                    : person.mentor === 'Mentor'
-                    ? 'Mentor'
-                    : 'Mentee'}
-                </Text>
-              </View>
-              <View style={[styles.avatarView, {borderColor: getColor()}]}>
-                <Avatar
-                  rounded
-                  source={{
-                    uri: person.avatar,
-                  }}
-                  size="xlarge"
-                />
-              </View>
-              <View style={styles.nameView}>
-                <Text style={[styles.nameText, styles.TextColor]}>
-                  {person.name}
-                </Text>
-                <Divider
-                  style={{
-                    backgroundColor: styles.TextColor.color,
-                    height: 1,
-                    marginVertical: 5,
-                  }}
-                />
-              </View>
+          <ScrollView style={{ flex: 1 }} ref={scrollRef}>
+            <View style={{ alignItems: 'center' }}>
               <View
-                style={
-                  person.isHireable === true
-                    ? [styles.hireMe, {backgroundColor: getColor()}]
-                    : {display: 'none'}
-                }>
-                <Text style={styles.hireMeText}>Hire Me</Text>
-              </View>
-              <TouchableOpacity
-                style={
-                  person.twitter_handle !== ''
-                    ? {
+                style={[
+                  styles.box,
+                  styles.infoView,
+                  { borderTopColor: getColor() },
+                ]}>
+                <View style={[styles.mmView, { borderColor: getColor() }]}>
+                  <Text
+                    style={{ color: getColor(), fontWeight: 'bold', fontSize: 23 }}>
+                    {person.mentor === 'Both' || person.mentor === 'İkiside'
+                      ? 'Mentor & Mentee'
+                      : person.mentor === 'Mentor'
+                        ? 'Mentor'
+                        : 'Mentee'}
+                  </Text>
+                </View>
+                <View style={[styles.avatarView, { borderColor: getColor() }]}>
+                  <Avatar
+                    rounded
+                    source={{
+                      uri: person.avatar,
+                    }}
+                    size="xlarge"
+                  />
+                </View>
+                <View style={styles.nameView}>
+                  <Text style={[styles.nameText, styles.TextColor]}>
+                    {person.name}
+                  </Text>
+                  <Divider
+                    style={{
+                      backgroundColor: styles.TextColor.color,
+                      height: 1,
+                      marginVertical: 5,
+                    }}
+                  />
+                </View>
+                <View
+                  style={
+                    person.isHireable === true
+                      ? [styles.hireMe, { backgroundColor: getColor() }]
+                      : { display: 'none' }
+                  }>
+                  <Text style={styles.hireMeText}>Hire Me</Text>
+                </View>
+                <TouchableOpacity
+                  style={
+                    person.twitter_handle !== ''
+                      ? {
                         flexDirection: 'row',
                         alignItems: 'center',
                         marginBottom: 15,
                       }
-                    : {display: 'none'}
-                }
-                onPress={() =>
-                  Linking.openURL(
-                    `https://twitter.com/intent/tweet?text=Hey!%20Here%20my%20find-mentor%20profile&url=https://findmentor.network/peer/${person.slug}`,
-                  )
-                }>
-                <View style={{marginRight: 10}}>
-                  <ShareTwitter width={30} height={30} />
-                </View>
-                <Text
-                  style={{
-                    fontSize: 20,
-                    color: '#2c7cfe',
-                    fontWeight: '600',
-                  }}>
-                  Share on Twitter
-                </Text>
-              </TouchableOpacity>
-              {person.mentor !== 'Mentee' ? (
-                <TouchableOpacity
-                  onPress={() => Linking.openURL(person.twitter_handle)}
-                  style={{
-                    backgroundColor: '#fdc405',
-                    padding: 10,
-                    borderRadius: 5,
-                  }}>
-                  <View
-                    style={{
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      flexDirection: 'row',
-                    }}>
-                    <Question
-                      style={{marginRight: 10}}
-                      width={25}
-                      height={25}
-                      fill={styles.box.backgroundColor}
-                    />
-                    <Text
-                      style={{
-                        fontSize: 17,
-                        fontWeight: '600',
-                        color: styles.box.backgroundColor,
-                      }}>
-                      Ask for a mentorship project
-                    </Text>
+                      : { display: 'none' }
+                  }
+                  onPress={() =>
+                    Linking.openURL(
+                      `https://twitter.com/intent/tweet?text=Hey!%20Here%20my%20find-mentor%20profile&url=https://findmentor.network/peer/${person.slug}`,
+                    )
+                  }>
+                  <View style={{ marginRight: 10 }}>
+                    <ShareTwitter width={30} height={30} />
                   </View>
-                </TouchableOpacity>
-              ) : null}
-              <View style={styles.interestView}>
-                <Text style={[styles.viewHeader, styles.TextColor]}>
-                  Interests:{' '}
+                  <Text
+                    style={{
+                      fontSize: 20,
+                      color: '#2c7cfe',
+                      fontWeight: '600',
+                    }}>
+                    Share on Twitter
                 </Text>
-                <Text style={styles.TextColor}>{person.interests}</Text>
-              </View>
-              <View style={styles.goalsView}>
-                <Text style={[styles.viewHeader, styles.TextColor]}>
-                  Goals:{' '}
-                </Text>
-                <Text style={styles.TextColor}>{person.goals}</Text>
-              </View>
-              <View
-                style={{
-                  alignSelf: 'center',
-                  flexDirection: 'row',
-                }}>
-                <TouchableOpacity
-                  style={
-                    person.twitter_handle !== ''
-                      ? styles.oneIconView
-                      : {display: 'none'}
-                  }
-                  onPress={() => Linking.openURL(person.twitter_handle)}>
-                  <Twitter width={40} height={40} />
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={
-                    person.github !== ''
-                      ? styles.oneIconView
-                      : {display: 'none'}
-                  }
-                  onPress={() => Linking.openURL(githubUrl)}>
-                  <Github width={40} height={40} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={
-                    person.linkedin !== ''
-                      ? styles.oneIconView
-                      : {display: 'none'}
-                  }
-                  onPress={() => Linking.openURL(linkedinUrl)}>
-                  <Linkedin width={40} height={40} />
-                </TouchableOpacity>
-              </View>
-            </View>
-            <ScrollView
-              zoomScale={1.2}
-              style={
-                readMe !== ''
-                  ? [styles.box, styles.githubView]
-                  : {display: 'none'}
-              }>
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                }}>
-                <View style={{marginRight: 10}}>
-                  <Github width={35} height={35} />
+                {person.mentor !== 'Mentee' ? (
+                  <TouchableOpacity
+                    onPress={() => Linking.openURL(person.twitter_handle)}
+                    style={{
+                      backgroundColor: '#fdc405',
+                      padding: 10,
+                      borderRadius: 5,
+                    }}>
+                    <View
+                      style={{
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        flexDirection: 'row',
+                      }}>
+                      <Question
+                        style={{ marginRight: 10 }}
+                        width={25}
+                        height={25}
+                        fill={styles.box.backgroundColor}
+                      />
+                      <Text
+                        style={{
+                          fontSize: 17,
+                          fontWeight: '600',
+                          color: styles.box.backgroundColor,
+                        }}>
+                        Ask for a mentorship project
+                    </Text>
+                    </View>
+                  </TouchableOpacity>
+                ) : null}
+                <View style={styles.interestView}>
+                  <Text style={[styles.viewHeader, styles.TextColor]}>
+                    Interests:{' '}
+                  </Text>
+                  <Text style={styles.TextColor}>{person.interests}</Text>
                 </View>
-                <Text style={[styles.viewHeader, styles.TextColor]}>
-                  GitHub
+                <View style={styles.goalsView}>
+                  <Text style={[styles.viewHeader, styles.TextColor]}>
+                    Goals:{' '}
+                  </Text>
+                  <Text style={styles.TextColor}>{person.goals}</Text>
+                </View>
+                <View
+                  style={{
+                    alignSelf: 'center',
+                    flexDirection: 'row',
+                  }}>
+                  <TouchableOpacity
+                    style={
+                      person.twitter_handle !== ''
+                        ? styles.oneIconView
+                        : { display: 'none' }
+                    }
+                    onPress={() => Linking.openURL(person.twitter_handle)}>
+                    <Twitter width={40} height={40} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={
+                      person.github !== ''
+                        ? styles.oneIconView
+                        : { display: 'none' }
+                    }
+                    onPress={() => Linking.openURL(githubUrl)}>
+                    <Github width={40} height={40} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={
+                      person.linkedin !== ''
+                        ? styles.oneIconView
+                        : { display: 'none' }
+                    }
+                    onPress={() => Linking.openURL(linkedinUrl)}>
+                    <Linkedin width={40} height={40} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+              <ScrollView
+                zoomScale={1.2}
+                style={
+                  readMe !== ''
+                    ? [styles.box, styles.githubView]
+                    : { display: 'none' }
+                }>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                  }}>
+                  <View style={{ marginRight: 10 }}>
+                    <Github width={35} height={35} />
+                  </View>
+                  <Text style={[styles.viewHeader, styles.TextColor]}>
+                    GitHub
                 </Text>
-              </View>
-              <Divider
-                style={{
-                  backgroundColor: styles.TextColor.color,
-                  height: 1,
-                  marginVertical: 8,
-                }}
-              />
-             { getGithubReadme(readMe) }
-            </ScrollView>
-            <ScrollView
-              style={
-                person.mentorships.length === 0
-                  ? {display: 'none'}
-                  : [styles.box, styles.activeMshipsView]
-              }>
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                }}>
-                <Text style={[styles.viewHeader, styles.TextColor]}>
-                  Active Mentorships
+                </View>
+                <Divider
+                  style={{
+                    backgroundColor: styles.TextColor.color,
+                    height: 1,
+                    marginVertical: 8,
+                  }}
+                />
+                <GithubReadMe data={readMe} />
+              </ScrollView>
+              <ScrollView
+                style={
+                  person.mentorships.length === 0
+                    ? { display: 'none' }
+                    : [styles.box, styles.activeMshipsView]
+                }>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                  }}>
+                  <Text style={[styles.viewHeader, styles.TextColor]}>
+                    Active Mentorships
                 </Text>
-              </View>
-              <Divider
-                style={{
-                  backgroundColor: styles.TextColor.color,
-                  height: 1,
-                  marginVertical: 8,
-                }}
-              />
-            </ScrollView>
-            <View
-              style={
-                isContributer
-                  ? [styles.box, styles.contView]
-                  : {display: 'none'}
-              }>
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                }}>
-                <Text style={[styles.viewHeader, styles.TextColor]}>
-                  Contributed
-                </Text>
-              </View>
-              <Divider
-                style={{
-                  backgroundColor: styles.TextColor.color,
-                  height: 1,
-                  marginVertical: 8,
-                }}
-              />
-              <View>
-                <Contributions />
-              </View>
-            </View>
-            {twitterHtml == '' ? (
+                </View>
+                <Divider
+                  style={{
+                    backgroundColor: styles.TextColor.color,
+                    height: 1,
+                    marginVertical: 8,
+                  }}
+                />
+                <View>
+                  <ActiveMentorships />
+                </View>
+              </ScrollView>
               <View
                 style={
-                  person.twitter_handle !== ''
-                    ? [
+                  isContributer
+                    ? [styles.box, styles.contView]
+                    : { display: 'none' }
+                }>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                  }}>
+                  <Text style={[styles.viewHeader, styles.TextColor]}>
+                    Contributed
+                </Text>
+                </View>
+                <Divider
+                  style={{
+                    backgroundColor: styles.TextColor.color,
+                    height: 1,
+                    marginVertical: 8,
+                  }}
+                />
+                <View>
+                  <Contributions />
+                </View>
+              </View>
+              {twitterHtml == '' ? (
+                <View
+                  style={
+                    person.twitter_handle !== ''
+                      ? [
                         styles.box,
                         [
                           styles.tweetsView,
@@ -434,22 +458,22 @@ const MentorMenteesDetail = ({route, navigation, props}) => {
                           },
                         ],
                       ]
-                    : {display: 'none'}
-                }>
-                <Text style={{fontSize: 15, fontWeight: 'bold'}}>
-                  He/she hasn't twitter account.
+                      : { display: 'none' }
+                  }>
+                  <Text style={{ fontSize: 15, fontWeight: 'bold' }}>
+                    He/she hasn't twitter account.
                 </Text>
-              </View>
-            ) : (
-              <ScrollView
-                style={
-                  person.twitter_handle !== ''
-                    ? [styles.box, styles.tweetsView]
-                    : {display: 'none'}
-                }>
-                <WebView
-                  source={{
-                    html: `<!DOCTYPE html>\
+                </View>
+              ) : (
+                  <ScrollView
+                    style={
+                      person.twitter_handle !== ''
+                        ? [styles.box, styles.tweetsView]
+                        : { display: 'none' }
+                    }>
+                    <WebView
+                      source={{
+                        html: `<!DOCTYPE html>\
                 <html>\
                   <head>\
                     <meta charset="utf-8">\
@@ -460,23 +484,23 @@ const MentorMenteesDetail = ({route, navigation, props}) => {
                       ${twitterHtml}\
                     </body>\
                 </html>`,
-                  }}
-                  style={{
-                    flex: 1,
-                    width: styles.tweetsView.width,
-                    height: styles.tweetsView.height,
-                    border: styles.tweetsView.borderRadius,
-                  }}
-                />
-              </ScrollView>
-            )}
+                      }}
+                      style={{
+                        flex: 1,
+                        width: styles.tweetsView.width,
+                        height: styles.tweetsView.height,
+                        border: styles.tweetsView.borderRadius,
+                      }}
+                    />
+                  </ScrollView>
+                )}
 
-            <View style={[styles.qrCodeView, styles.box]}>
-              <QRCode size={210} value={qrValue} />
+              <View style={[styles.qrCodeView, styles.box]}>
+                <QRCode size={210} value={qrValue} />
+              </View>
             </View>
-          </View>
-        </ScrollView>
-      )}
+          </ScrollView>
+        )}
     </SafeAreaView>
   );
 };
@@ -587,4 +611,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export {MentorMenteesDetail};
+export { MentorMenteesDetail };
